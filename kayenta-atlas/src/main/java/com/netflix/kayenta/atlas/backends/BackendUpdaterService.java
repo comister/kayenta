@@ -49,16 +49,18 @@ public class BackendUpdaterService extends AbstractHealthIndicator {
   }
 
   @Scheduled(initialDelay = 2000, fixedDelay=122000)
-  public synchronized void run() {
+  public void run() {
     // TODO: this will fetch the same uri even if they share the same URI.
     // TODO: It also has locking issues, in that we could hold a lock for a long time.
     // TODO: Locking may not matter as we should rarely, if ever, modify this list.
     // TODO: Although, for healthcheck, it may...
     int checks = 0;
     for (BackendUpdater updater: backendUpdaters) {
-      Boolean result = updater.run(retrofitClientFactory, objectMapper, okHttpClient);
-      if (result)
-        checks++;
+      synchronized(this) {
+        boolean result = updater.run(retrofitClientFactory, objectMapper, okHttpClient);
+        if (result)
+          checks++;
+      }
     }
     checksCompleted = checks;
   }
